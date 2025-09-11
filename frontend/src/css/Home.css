@@ -1,0 +1,17 @@
+.col-md-4:hover {
+  transform: scale(1.05);
+  transition: transform 0.6s;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+  transition: transform 0.6s;
+}
+
+.hover-scale {
+  transition: transform 0.6s;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
