@@ -27,8 +27,6 @@ except Exception as e:
 
 # Choose a valid model from your available list
 VALID_MODEL_ID = "gemini-2.5-flash"  # <-- replace with an available model that supports generate_content
-#gemini-2.5-pro
-# VALID_MODEL_ID = "gemini-2.5-flash"
 
 @app.route("/generate_response", methods=["POST"])
 def generate_response():
@@ -41,13 +39,22 @@ def generate_response():
             return jsonify({"error": "No input provided"}), 400
 
         model = genai.GenerativeModel(VALID_MODEL_ID)
-
         response = model.generate_content(
-            f"Please correct the grammar and punctuation of this sentence without changing its meaning:\n\n{user_input}"
+            f"Please correct the grammar and punctuation of this sentence without changing its meaning. Return only the corrected sentence without any Markdown or extra text:\n\n{user_input}"
         )
 
-        print("Gemini response:", response.text)
-        return jsonify({"text": response.text.strip()})
+        corrected_text = response.text.strip()
+
+        # Remove any leading/trailing ** (Markdown bold)
+        if corrected_text.startswith("**") and corrected_text.endswith("**"):
+            corrected_text = corrected_text[2:-2].strip()
+
+        # Optional: remove "The corrected sentence is:" if model still adds it
+        if corrected_text.lower().startswith("the corrected sentence is:"):
+            corrected_text = corrected_text[len("the corrected sentence is:"):].strip()
+
+        print("Gemini response:", corrected_text)
+        return jsonify({"text": corrected_text})
 
     except Exception as e:
         print("🔥 Error in generate_response:", e)
@@ -55,6 +62,6 @@ def generate_response():
             "error": "Failed to generate response",
             "details": str(e)
         }), 500
-
+    
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
