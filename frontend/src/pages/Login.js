@@ -1,47 +1,42 @@
 // src/pages/Login.js
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import axios from 'axios';
-
-
-const API = 'http://localhost:5000';
+import axios from "axios";
 
 function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
-
-  const navigate = useNavigate();
 
   // Handle input change
   const handleChange = (e) => {
-    const { id, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [id]: type === "checkbox" ? checked : value,
-    });
+    const { id, value } = e.target;
+    setFormData({ ...formData, [id]: value });
   };
 
-  // Handle form submission
-  const handleSubmit = async(e) => {
+  // Handle form submit
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-    const res = await axios.post(`${API}/login`, {
-      email: formData.email,
-      password: formData.password,
-    });
-
-    if (res.status === 200) {
-      alert("Login successful!");
-      navigate("/");
+      const res = await axios.post("http://localhost:5000/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      // Save user data to localStorage
+      localStorage.setItem("user", JSON.stringify({
+        email: res.data.email,
+        userId: res.data.userId,
+        name: res.data.name
+      }));
+      
+      alert(res.data.msg);
+      window.location.href = "/tryit";
+    } catch (err) {
+      alert(err.response?.data?.msg || "Login failed. Try again.");
     }
-  } catch (err) {
-    alert(err.response?.data?.msg || "Login failed. Try again.");
-  }
   };
 
   return (
@@ -55,12 +50,11 @@ function Login() {
     >
       {/* Navbar */}
       <nav
-        className="navbar navbar-expand-lg"
+        className="navbar navbar-expand-lg navbar-dark"
         style={{ background: "linear-gradient(135deg,#04749c,#ffffff)" }}
       >
         <div className="container">
-          {/* ✅ Force white text for brand */}
-          <a className="navbar-brand fw-bold text-white" href="/home">
+          <a className="navbar-brand fw-bold text-white" href="/">
             VoxFix
           </a>
           <button
@@ -68,9 +62,6 @@ function Login() {
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#navbarNav"
-            aria-controls="navbarNav"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
           >
             <span className="navbar-toggler-icon"></span>
           </button>
@@ -78,18 +69,41 @@ function Login() {
             className="collapse navbar-collapse justify-content-end"
             id="navbarNav"
           >
+            <ul className="navbar-nav">
+              <li className="nav-item">
+                <a className="nav-link text-black" href="/">
+                  Home
+                </a>
+              </li>
+              <li>
+                <a className="nav-link text-black" href="/contact">
+                  Contact Us
+                </a>
+              </li>
+              <li>
+                <a className="nav-link text-black" href="/about">
+                  About Us
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
       </nav>
 
       {/* Login Form */}
-      <div className="container d-flex justify-content-center align-items-center" style={{ minHeight: "90vh" }}>
-        <div className="card shadow p-4 text-center" style={{ width: "100%", maxWidth: "450px", zIndex: 1 }}>
+      <div
+        className="container d-flex justify-content-center align-items-center"
+        style={{ minHeight: "90vh" }}
+      >
+        <div
+          className="card shadow p-4 text-center"
+          style={{ width: "100%", maxWidth: "450px", zIndex: 1 }}
+        >
           <h3 className="mb-4">Login</h3>
           <form onSubmit={handleSubmit}>
             <div className="mb-3 text-start">
               <label htmlFor="email" className="form-label">
-                Email address
+                Email Address
               </label>
               <input
                 type="email"
@@ -115,24 +129,17 @@ function Login() {
                 required
               />
             </div>
-            <div className="mb-3 form-check text-start">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-              />
-              <label className="form-check-label" htmlFor="rememberMe">
-                Remember me
-              </label>
-            </div>
-            <button type="submit" className="btn btn-primary w-100" onClick={handleSubmit}>
+            <button type="submit" className="btn btn-primary w-100">
               Login
             </button>
             <div className="text-center mt-3">
               <small>
-                Don't have an account? <a href="/signup">Sign up</a>
+                Don't have an account? <a href="/signup">Sign up here</a>
+              </small>
+            </div>
+            <div className="text-center mt-2">
+              <small>
+                <a href="/forgot-password">Forgot your password?</a>
               </small>
             </div>
           </form>
