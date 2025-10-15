@@ -14,6 +14,7 @@ function TryIt() {
   const [user, setUser] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showDeleteMenu, setShowDeleteMenu] = useState(null);
+  const [analysisData, setAnalysisData] = useState(null); // New state for analysis data
   const recognitionRef = useRef(null);
   const speechSynthesisRef = useRef(null);
 
@@ -189,23 +190,34 @@ function TryIt() {
   const processGrammarCheck = async (text) => {
     try {
       const res = await axios.post("http://localhost:5001/generate_response", { prompt: text });
-      if (res.data.text) {
-        const highlighted = highlightCorrections(text, res.data.text);
+      console.log("🔍 Backend Response:", res.data); // Debug log
+      
+      if (res.data.corrected_sentence) {
+        const highlighted = highlightCorrections(text, res.data.corrected_sentence);
         const outputData = {
           highlighted: highlighted,
-          plainText: res.data.text,
+          plainText: res.data.corrected_sentence,
         };
         setOutput(outputData);
+        
+        // Store the full analysis data for display
+        setAnalysisData({
+          grammar_explanation: res.data.grammar_explanation,
+          suggestions: res.data.suggestions,
+          alternative_words: res.data.alternative_words,
+          overall_assessment: res.data.overall_assessment
+        });
 
         // Save to MongoDB if user is logged in
         if (user) {
-          saveChat(text, outputData, res.data.text);
+          saveChat(text, outputData, res.data.corrected_sentence);
         }
       } else {
         setOutput({
           highlighted: "⚠️ No correction returned from backend.",
           plainText: "",
         });
+        setAnalysisData(null);
       }
     } catch (error) {
       console.error("❌ Grammar check error:", error);
@@ -213,6 +225,7 @@ function TryIt() {
         highlighted: "Error while checking grammar. Please try again.",
         plainText: "",
       });
+      setAnalysisData(null);
     }
   };
 
@@ -223,6 +236,7 @@ function TryIt() {
       highlighted: "Your corrected sentence will appear here...",
       plainText: "",
     });
+    setAnalysisData(null);
     stopSpeech();
   };
 
@@ -239,6 +253,7 @@ function TryIt() {
       highlighted: item.correctedText,
       plainText: item.output
     });
+    setAnalysisData(null); // Clear analysis data for history items
     setShowHistory(false);
   };
 
@@ -609,6 +624,57 @@ function TryIt() {
                     </div>
                   </div>
                 </div>
+
+                {/* Analysis Data Display */}
+                {analysisData && (
+                  <div className="mt-4">
+                    <div className="card border-0" style={{ backgroundColor: '#f8f9fa' }}>
+                      <div className="card-body">
+                        <h6 className="card-title text-primary mb-3">Detailed Analysis</h6>
+                        
+                        {/* Grammar Explanation */}
+                        {analysisData.grammar_explanation && (
+                          <div className="mb-3">
+                            <strong className="text-dark">Grammar Explanation:</strong>
+                            <p className="mb-0 small text-muted">{analysisData.grammar_explanation}</p>
+                          </div>
+                        )}
+
+                        {/* Suggestions */}
+                        {analysisData.suggestions && analysisData.suggestions.length > 0 && (
+                          <div className="mb-3">
+                            <strong className="text-dark">Suggestions:</strong>
+                            <ul className="mb-0 small text-muted">
+                              {analysisData.suggestions.map((suggestion, index) => (
+                                <li key={index}>{suggestion}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Alternative Words */}
+                        {analysisData.alternative_words && analysisData.alternative_words.length > 0 && (
+                          <div className="mb-3">
+                            <strong className="text-dark">Alternative Words:</strong>
+                            <div className="d-flex flex-wrap gap-2 mt-1">
+                              {analysisData.alternative_words.map((word, index) => (
+                                <span key={index} className="badge bg-secondary">{word}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Overall Assessment */}
+                        {analysisData.overall_assessment && (
+                          <div className="mb-0">
+                            <strong className="text-dark">Overall Assessment:</strong>
+                            <p className="mb-0 small text-muted">{analysisData.overall_assessment}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
